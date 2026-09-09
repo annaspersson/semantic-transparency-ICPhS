@@ -3,4 +3,9 @@
 .RData
 .Ruserdata
 *.Rproj
-*.DS_Store
+.DS_Store
+*.rmarkdown
+*.js
+*.css
+*.html
+*.woff
