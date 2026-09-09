@@ -623,6 +623,7 @@ On trials where agents are expressive, the produce signal mechanics gets overrid
 We conducted several grid searches of the parameter space to explore different combination of parameter values and their effect on the resulting iconicity. Initial grid searches explored larger ranges of parameter values but smaller number of simulations per parameter combination (n_sim = 20). The grid searches reported here focused on a smaller, more targeted range of values, but with larger number of simulations per combination (n_sim = 300). Recognition bias and expressive probability were fit as separate grids but shared values for the model-general parameters. The following parameter values were explored: production noise (drift_sd) = 0.05, 0.1, 0.2; attractor stickiness (center_sd) = 0.06, 0.12, 0.24; learning strength = 0.015, 0.03, 0.06; iconicity weight = 1.5, 3, 6; expressive probability = 0.01, 0.025, 0.05.
 
 ```{r}
+#| echo: false
 # GRID SEARCHES
 RESET_MODELS <- FALSE  # set TRUE to force a rerun
 
@@ -757,6 +758,7 @@ if (RESET_MODELS || !file.exists("../models/grid-search-expressiveAgents.rds")) 
 #| fig-width: 15
 #| fig-height: 10
 #| out-width: "90%"
+#| echo: false
 
 # Plot grid searches by average proportion of signals in iconic attractor during the 10 final rounds
 d.grid.baseline.forPlot <- d.grid.baseline %>%
