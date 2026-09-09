@@ -400,7 +400,7 @@ cat("Single-step signal capture probability:", round(p_signal, 3), "\n")
 
 ```
 
-The sd of a signal that has fallen into an attractor (center_sd) was calibrated to 0.12, which corresponds to a \~2% chance of escaping from the attractor in a single production step when the signal is at the dead center, the circle radius is 0.3 and the associative strength is 0. The dead center of an attractor is therefore extremely sticky; however, the probability of hitting the dead center from the start of the interaction is low (\~5% chance of landing within a tight radius of $r \le 0.10$). Signals close to the boundary of an attractor have a sd close to baseline noise (drift_sd), making them likely to both drift deeper into the attractor or escape it entirely. We ran a simulation exploring how the probability of escaping an attractor is affected by signal location and associative strength. The simulation suggests that escape probability from the dead center is barely affected by associative strength, whereas its effect is substantially larger for off-center signals--the escape probability for signals located at a quarter-radius drops from 0.29 to 0.055 as associative strength increases (from 0 to 1). Signals at the boundary retain a high escape probability (\>0.56 across associative strengths).
+The sd of a signal that has fallen into an attractor (center_sd) was calibrated to 0.12, which corresponds to a \~2% chance of escaping from the attractor in a single production step when the signal is at the dead center, the circle radius is 0.3 and the associative strength is 0. The dead center of an attractor is therefore extremely sticky; however, the probability of hitting the dead center from the start of the interaction is low (\~5% chance of landing within a tight radius of $r \le 0.10$). Signals close to the boundary of an attractor have a sd close to baseline noise (drift_sd), making them likely to both drift deeper into the attractor or escape it entirely. We ran a simulation exploring how the probability of escaping an attractor is affected by signal location and associative strength. The simulation suggests that escape probability from the dead center is barely affected by associative strength, whereas its effect is substantially larger for off-center signals: the escape probability for signals located at a quarter-radius drops from 0.29 to 0.055 as associative strength increases (from 0 to 1). Signals at the boundary retain a high escape probability (\>0.56 across associative strengths).
 
 ```{r}
 test_single_step_escape <- function(attractor_center = c(0.15, 0.15),
@@ -523,12 +523,11 @@ The signal receiver recognizes the produced signal by guessing the intended refe
 
 After calculating success or failure, agent learning is reinforced by updating the sender’s and receiver’s associative strengths with a baseline learning strength. The learning strength is scaled as a function of trial success or failure, with more learning on successful trials. Learning strength and success/failure scale control the magnitude of learning. The learning strength is calibrated to 0.015 with a success scale of 7.5 and a failure scale of 1. This corresponds to a boost of \~0.02 for a successful trial and \~0.003 for a failed trial from the start of the interaction, and reaching an overall associative strength of \~0.96 after 50 trials of all-successes, and of \~0.48 after 50 trials of all-failures.
 
-On successful trials, both agents further update their stored signal representations by integrating over the stored and produced signal values, allowing for successful interactions to gradually reshape form-meaning mappings. No signal update occurs on failed trials.
-
 ```{r}
-# check the two idealized extreme trajectories (pure-success-only, pure-failure-only) for a given learning_strength/success_scale/failure_scale.
-report_pure_paths <- function(learning_strength, success_scale = 7.5, failure_scale = 1,
-                              n_updates = 50, start_p = 0.3) {
+# check the two idealized extreme trajectories (pure-success-only, pure-failure-only) 
+# for a given learning_strength/success_scale/failure_scale.
+report_pure_paths <- function(learning_strength, success_scale = 7.5, 
+                              failure_scale = 1, n_updates = 50, start_p = 0.3) {
   logit_success <- qlogis(clamp02(start_p))
   logit_failure <- qlogis(clamp02(start_p))
   for (i in seq_len(n_updates)) {
@@ -549,9 +548,11 @@ report_pure_paths(0.015)
 
 ```
 
+On successful trials, newly perceived signals are integrated with existing stored values for the referent (summed and divided by 2), progressively reinforcing mappings that support successful communication. No signal update occurs on failed trials.
+
 ### Recognition bias: iconicity weight
 
-The iconicity recognition bias is governed by two parameters: signal evidence and iconicity weight. Signal evidence is the distance from signal to the center of a target semantic attractor; this evidence is positive for signals inside the correct semantic attractor, and negative if inside the incorrect semantic attractor, thus boosting iconic signals and punishing anti-iconic signals. The evidence is further multiplied by the recognition bias parameter iconicity_weight. This parameter is calibrated to 3, which corresponds to a \~0.59 absolute boost for the perfectly iconic signal (evidence = 1), and a \~0.28 absolute punishment for the perfectly anti-iconic signal, when the signal receiver's associative strength = 0.3.
+The iconicity recognition bias is governed by two parameters: signal evidence and iconicity weight. Signal evidence is the distance from signal to the center of a target semantic attractor; this evidence is positive for signals inside the correct semantic attractor, and negative if inside the incorrect semantic attractor, thus boosting iconic signals and punishing anti-iconic signals. The evidence is further multiplied by the recognition bias parameter (iconicity_weight). This parameter is calibrated to 3, which corresponds to a \~0.59 absolute boost for the perfectly iconic signal (evidence = 1), and a \~0.28 absolute punishment for the perfectly anti-iconic signal, when the signal receiver's associative strength = 0.3.
 
 When this mechanism is active, the signal receiver’s prior associative strength and transparency-weighted signal evidence are combined additively in log-odds space and converted back to probability space.
 
@@ -597,30 +598,38 @@ On trials where agents are expressive, the produce signal mechanics gets overrid
 
 ```{r}
 #| echo: false
-# # what fraction of expressive productions end up far enough from the semantic prototype
-# # that they leave its own attractor circle (and so are no longer really iconic)?
-#
-# estimate_expressive_iconicity_loss <- function(target_center, expressive_noise_sd,
-#                                                circle_radius, n_draws = 20000) {
-#   x <- pmax(0, pmin(1, rnorm(n_draws, mean = target_center[1], sd = expressive_noise_sd)))
-#   y <- pmax(0, pmin(1, rnorm(n_draws, mean = target_center[2], sd = expressive_noise_sd)))
-#   dist_to_target <- sqrt((x - target_center[1])^2 + (y - target_center[2])^2)
-#   mean(dist_to_target >= circle_radius)
-# }
-# 
-# # Example sweep:
-# for (sd in c(0.03, 0.05, 0.0625, 0.08, 0.1)) {
-#   loss <- estimate_expressive_iconicity_loss(
-#     target_center = c(0.15, 0.85), expressive_noise_sd = sd, circle_radius = 0.3
-#   )
-#   cat("expressive_noise_sd =", sd, "-> un-iconic rate =", round(loss, 5), "\n")
-# }
+ # # what fraction of expressive productions end up far enough from the semantic prototype
+ # # that they leave its own attractor circle (and so are no longer really iconic)?
+ # 
+ # estimate_expressive_iconicity_loss <- function(target_center, expressive_noise_sd,
+ #                                                circle_radius, n_draws = 20000) {
+ #   x <- pmax(0, pmin(1, rnorm(n_draws, mean = target_center[1], sd = expressive_noise_sd)))
+ #   y <- pmax(0, pmin(1, rnorm(n_draws, mean = target_center[2], sd = expressive_noise_sd)))
+ #   dist_to_target <- sqrt((x - target_center[1])^2 + (y - target_center[2])^2)
+ #   mean(dist_to_target >= circle_radius)
+ # }
+ # 
+ # # Example sweep:
+ # for (sd in c(0.03, 0.05, 0.0625, 0.08, 0.1)) {
+ #   loss <- estimate_expressive_iconicity_loss(
+ #     target_center = c(0.15, 0.85), expressive_noise_sd = sd, circle_radius = 0.3
+ #  )
+ #   cat("expressive_noise_sd =", sd, "-> un-iconic rate =", round(loss, 5), "\n")
+ # }
 
 ```
 
-## Grid searches through the parameter space
+## Grid searches across the parameter space
 
-We conducted several grid searches of the parameter space to explore different combination of parameter values and their effect on the resulting iconicity. Initial grid searches explored larger ranges of parameter values but smaller number of simulations per parameter combination (n_sim = 20). The grid searches reported here focused on a smaller, more targeted range of values, but with larger number of simulations per combination (n_sim = 300). Recognition bias and expressive probability were fit as separate grids but shared values for the model-general parameters. The following parameter values were explored: production noise (drift_sd) = 0.05, 0.1, 0.2; attractor stickiness (center_sd) = 0.06, 0.12, 0.24; learning strength = 0.015, 0.03, 0.06; iconicity weight = 1.5, 3, 6; expressive probability = 0.01, 0.025, 0.05.
+We conducted several grid searches of the parameter space to explore different combination of parameter values and their effect on the signal production; more specifically, the proportion of signals that end up inside the correct semantic attractor over the final 10 rounds of interaction. Initial grid searches explored larger ranges of parameter values but smaller number of simulations per parameter combination (n_sim = 20). The grid searches reported here focused on a smaller, more targeted range of values, but with larger number of simulations per combination (n_sim = 300). Recognition bias and expressive probability were fit as separate grids but shared values for the model-general parameters. 
+
+The following parameter values were explored:
+
+  * production noise (drift_sd) = 0.05, 0.1, 0.2; 
+  * attractor stickiness (center_sd) = 0.06, 0.12, 0.24; 
+  * learning strength = 0.015, 0.03, 0.06; 
+  * iconicity weight = 1.5, 3, 6; 
+  * expressive probability = 0.01, 0.025, 0.05.
 
 ```{r}
 #| echo: false
@@ -750,14 +759,11 @@ if (RESET_MODELS || !file.exists("../models/grid-search-expressiveAgents.rds")) 
 
 ```
 
-@fig-plot-grid shows the results of the grid searches over the parameter space for the three model types. Overall, we note that a certain level of production noise is needed for signals to leave the neutral midpoint at the initial stages of the interaction, and explore the space to, at one point, end up in an iconic attractor. Second, while a certain level of attractor stickiness allows for the capture of signals in an attractor, too much stickiness can reduce the possibility of signals ending up in an iconic attractor, as it might be trapped in the wrong attractor. Third, there is a trade-off between learning strength and proportion of iconic signals---if learning rate is too strong, agents tend to settle in their form-meaning mappings and stop exploring the space. This effect is particularly evident in the recognition bias model. Finally, we note that with only 5% of trials being expressive, the iconic signals hit ceiling with 100% of signals in the final 10 rounds being iconic. This mechanism is far more effective than the recognition bias, hitting XX times higher proportion of iconic signals than the recognition bias for the same model-general parameter values.
-
 ```{r}
 #| label: fig-plot-grid
-#| fig-cap: "Grid searches over the parameter space for the three models: baseline control, recognition bias, and expressivity. Color fill indicates the proportion of signals that end up in an iconic attractor over the final 10 rounds of the interaction."
+#| fig-cap: "Grid searches over the parameter space for the three models: baseline control, recognition bias, and expressive speakers. Color fill indicates the proportion of signals that end up in an iconic attractor over the final 10 rounds of the interaction."
 #| fig-width: 15
 #| fig-height: 10
-#| out-width: "90%"
 #| echo: false
 
 # Plot grid searches by average proportion of signals in iconic attractor during the 10 final rounds
@@ -850,6 +856,27 @@ p.baseline + p.recognitionBias + p.expressiveAgents + guide_area() +
   theme(legend.position = "bottom")
 
 ```
+
+```{r}
+#| warning: false
+#| echo: false
+# Join on specific scalar parameter names
+key_params <- c("drift_sd", "center_sd", "learning_strength", "circle_radius") 
+
+iconic_ratio_summary <- d.grid.expressiveAgents.forPlot %>%
+  select(all_of(key_params), prop_expressive = iconic_signals_prop) %>%
+  inner_join(
+    d.grid.recognitionBias.forPlot %>% 
+      select(all_of(key_params), prop_bias = iconic_signals_prop),
+    by = key_params) %>%
+  mutate(ratio = prop_expressive / prop_bias) %>%
+  summarise(
+    mean_ratio = mean(ratio, na.rm = TRUE),
+    sd_ratio   = sd(ratio, na.rm = TRUE))
+
+```
+
+@fig-plot-grid shows the results of the grid searches for the three model types. Overall, we note that a certain level of production noise is needed for signals to leave the neutral midpoint at the initial stages of the interaction, and explore the space to, at one point, end up in an iconic attractor. Second, while a certain level of attractor stickiness allows for the capture of signals in an attractor, too much stickiness can reduce the possibility of signals ending up in an iconic attractor, as it might be trapped in the wrong attractor. Third, there is a trade-off between learning strength and proportion of iconic signals---if learning rate is too strong, agents tend to settle in their form-meaning mappings and stop exploring the space. This effect is particularly evident in the recognition bias model. Finally, we note that with only 5% of trials being expressive (@fig-plot-grid, bottom-right panel), the model hits ceiling for the majority of parameter combinations, with 100% of signals being iconic in the final 10 rounds. This mechanism is far more effective than the recognition bias, with on average `r sprintf("%.2f", iconic_ratio_summary$mean_ratio)` (sd = `r sprintf("%.2f", iconic_ratio_summary$sd_ratio)`) times higher proportion of iconic signals for the same model-general parameter values.
 
 ```{r}
 #| label: prop-iconic-signals-against-baseline-threshold
