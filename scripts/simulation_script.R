@@ -681,11 +681,3 @@ ggsave(here::here("figures",  "average_prop_interactions_wide.png"),
        units = "mm", 
        dpi = 300) 
 
-
-## Proportion over time x Noise
-d.grid.baseline <- readRDS("models/grid-search-baseline.rds")
-d.grid.recognitionBias <- readRDS("models/grid-search-recognitionBias.rds")
-d.grid.expressiveAgents <- readRDS("models/grid-search-expressiveAgents.rds")
-
-
-
