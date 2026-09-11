@@ -762,8 +762,8 @@ if (RESET_MODELS || !file.exists("../models/grid-search-expressiveAgents.rds")) 
 ```{r}
 #| label: fig-plot-grid
 #| fig-cap: "Grid searches over the parameter space for the three models: baseline control, recognition bias, and expressive speakers. Color fill indicates the proportion of signals that end up in an iconic attractor over the final 10 rounds of the interaction."
-#| fig-width: 15
-#| fig-height: 10
+#| fig-width: 12
+#| fig-height: 16
 #| echo: false
 
 # Plot grid searches by average proportion of signals in iconic attractor during the 10 final rounds
@@ -829,6 +829,7 @@ plot_grid_faceted <- function(d.grid, facet_var, limits) {
       axis.text = element_text(size = 10),
       axis.title = element_text(size = 10),
       strip.text = element_text(size = 10),
+      strip.text.y = element_text(size = 10, angle = 0),
       panel.background = element_rect(fill = "white", color = NA),
       plot.background = element_rect(fill = "white", color = NA),
       strip.background = element_rect(fill = "white", color = NA)) +
@@ -843,17 +844,20 @@ p.recognitionBias <- plot_grid_faceted(d.grid.recognitionBias.forPlot, "iconicit
 p.expressiveAgents <- plot_grid_faceted(d.grid.expressiveAgents.forPlot, "expressive_probability", combined_range)
 
 layout_areas <- c(
-  area(t = 1, l = 1, b = 1, r = 1),
-  area(t = 1, l = 2, b = 2, r = 2),
-  area(t = 1, l = 3, b = 2, r = 3),
-  area(t = 2, l = 1, b = 2, r = 1))
+  area(t = 1, l = 1, b = 1, r = 1), # p.baseline (1 unit high)
+  area(t = 2, l = 1, b = 4, r = 1), # p.recognitionBias (3 units high: rows 2, 3, 4)
+  area(t = 5, l = 1, b = 7, r = 1), # p.expressiveAgents (3 units high: rows 5, 6, 7)
+  area(t = 1, l = 2, b = 7, r = 2)  # guide_area (spans entire height)
+)
 
 p.baseline + p.recognitionBias + p.expressiveAgents + guide_area() +
   plot_layout(
     design = layout_areas, 
+    widths = c(4, 1), # Allocates 80% width to plots, 20% to legend
     guides = "collect", 
-    axes = "collect") &
-  theme(legend.position = "bottom")
+    axes = "collect"
+  ) &
+  theme(legend.position = "right")
 
 ```
 
